@@ -1,49 +1,64 @@
 # This is a sample Python script.
 import math
 import copy
-import networkx
 import networkx as nx
 
 def q4a(g):
+    """
+    this function checks if there's a cycle that can present an exchange in the allocation which lead to a parreto improvment
+    :param g: a graph
+    :return: True iff there is a  parreto improvment
+    """
     new_graph = copy.deepcopy(g)
     cycle = negative_cycle(new_graph)
-    # TODO:
-    # add a new graph so I could send only it's copy
-    if cycle!=[]: return True
-    else: return False
+    if cycle!=[]:
+        return True
+    else:
+        return False
 
 def negative_cycle(graph):
     new_graph = copy.deepcopy(graph)
-    update_weights(new_graph)
+    update_weights_as_log(new_graph)
     cycleFound=False
     cycle = []
-    # print(graph.edges.data())
-    for node in graph.nodes:
+
+    for node in new_graph.nodes:
         if cycleFound:
             break
         try:
-            cycle = nx.find_negative_cycle(graph, node)
+            # if it doesn't find a negative cycle it throws an exception
+            cycle = nx.find_negative_cycle(new_graph, node)
             cycleFound = True
-
         except:
             pass
 
-    print("Does G contains any negative cycle?", cycleFound)
-    if cycleFound:
-        print(cycle)
     return cycle
 
 
-def update_weights(graph):
+def update_weights_as_log(graph):
+    """
+    I failed to use the doctest
+    :returns the graph with edges as their logarithmic value
+    >>> graph_with_negative_cycle = nx.DiGraph().add_node(range(3)).add_edge(1, 2, weight=4).add_edge(2, 3, weight=0.5).add_edge(3, 1, weight=0.25)
+    this graph_with_negative_cycle is the triangle 1 --4--> 2 --0.5--> 3 --0.25--> 1
+    >>> graph_with_negative_cycle_updated = nx.DiGraph().add_node(range(3)).add_edge(1, 2, weight=2).add_edge(2, 3, weight=-1).add_edge(3, 1, weight=-1)
+    >>>[update_weights_as_log(graph=graph_with_negative_cycle)]
+    >>> graph_with_negative_cycle_updated
+    :param graph:
+    :return:
+    """
     for e in graph.edges:
-        weight = graph[e[0]][e[1]]["weight"]
+        weight = graph[ e[0] ][ e[1] ]["weight"]
+        # print("weight before", weight)
         if weight > 0:
             graph[e[0]][e[1]]["weight"] = math.log(weight, 2)
+            # print("weight after",graph.get_edge_data(e[0] ,e[1]))
+
     return graph
 
 
 
-def q5(cycle=[], allocation=[0][0], valuations=[0][0]):
+def overall(cycle=[], allocation=[0][0], valuations=[0][0]):
     graph_consumes = create_graph_consumes(allocation)
     graph_exchanges = create_graph_exchanges(allocation, valuations)
 
@@ -57,7 +72,6 @@ def q5(cycle=[], allocation=[0][0], valuations=[0][0]):
 
     if negative_exchange_cycle == []:
         negative_exchange_cycle = find_zero_weighted_cycle()
-
     return update_allocation(allocation, negative_consume_cycle)
 
 
@@ -104,7 +118,7 @@ def update_allocation(exchange_cycle, allocation, valuations):
 
 
 def create_graph_exchanges(allocation=[0][0], valuations=[0][0]):
-    gv=networkx.DiGraph
+    gv=nx.DiGraph()
     gv.add_nodes_from(range(10))
     res=[[[0 for i in range (len(allocation))] for i in range (len(valuations))]  for i in range (len(valuations))]
 
@@ -118,7 +132,7 @@ def create_graph_exchanges(allocation=[0][0], valuations=[0][0]):
             gv.add_edge(i, j, weight=min(res[i][j]))
 
 def create_graph_consumes(allocation=[0][0]):
-    graph_consumes=networkx.DiGraph
+    graph_consumes=nx.DiGraph
     graph_consumes.add_nodes_from(range(len(allocation)))
     graph_consumes.add_nodes_from(range(-len(allocation[1]), 0))
 
@@ -139,13 +153,50 @@ if __name__ == '__main__':
     g.add_edge(3, 1, weight=0.5)
 
     q="4a"
-    q=5
+    # q=5
 
-    if q=="4a":
-        q4a(g)
+    # if q=="4a":
+    #     q4a(g)
 
-    elif q==5:
-        q5(g)
+    graph_with_negative_cycle = nx.DiGraph()
+    graph_with_negative_cycle.add_node(range(3))
+    graph_with_negative_cycle.add_edge(1, 2, weight=4)
+    graph_with_negative_cycle.add_edge(2, 3,weight=0.5)
+    graph_with_negative_cycle.add_edge(3, 1, weight=0.25)
+    # graph_with_negative_cycle is the triangle  1 --4--> 2 --0.5--> 3 --0.25--> 1
+
+    graph_with_negative_cycle_updated = nx.DiGraph()
+    graph_with_negative_cycle_updated.add_node(range(3))
+    graph_with_negative_cycle_updated.add_edge(1, 2, weight=2.0)
+    graph_with_negative_cycle_updated.add_edge(2, 3,weight=-1.0)
+    graph_with_negative_cycle_updated.add_edge( 3, 1, weight=-1.0)
+    # graph_with_negative_cycle_updated is the following triangle  1 --2--> 2 --(-1)--> 3 --(-2)--> 1
+
+    cycle = negative_cycle(graph_with_negative_cycle)
+    print(cycle)
+
+    graph_without_negative_cycle = nx.DiGraph()
+    graph_without_negative_cycle.add_node(range(3))
+    graph_without_negative_cycle.add_edge(1, 2, weight=4)
+    graph_without_negative_cycle.add_edge(2, 3, weight=8)
+    graph_without_negative_cycle.add_edge(3, 1, weight=16)
+
+    graph_with_negative_cycle_updated = nx.DiGraph()
+    graph_with_negative_cycle_updated.add_node(range(3))
+    graph_with_negative_cycle_updated.add_edge(1, 2, weight=2.0)
+    graph_with_negative_cycle_updated.add_edge(2, 3, weight=3.0)
+    graph_with_negative_cycle_updated.add_edge(3, 1, weight=4.0)
+
+    cycle = negative_cycle(graph_with_negative_cycle_updated)
+    print(cycle)
+
+    # flag = update_weights_as_log(graph=graph_with_negative_cycle) == graph_with_negative_cycle_updated
+    # print(flag)
+    # elif q==5:
+    #     overall(g)
+
+    # import doctest
+    # doctest.testmod()
 
 
 
